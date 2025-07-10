@@ -1,0 +1,12 @@
+"use client";
+import { useAuthRedirect } from "@/utils/useAuthRedirect";
+
+export default function ConvictionPage() {
+  useAuthRedirect();
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-white">
+      <h1 className="text-3xl font-bold">Conviction</h1>
+      <p>This is the Conviction add-on page.</p>
+    </main>
+  );
+}

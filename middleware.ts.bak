@@ -1,0 +1,42 @@
+// This is a backup of the middleware implementation
+// It's currently disabled to avoid conflicts with our layout-based auth approach
+
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.redirect(new URL('/passport/login', req.url));
+    }
+    
+    // If trying to access admin routes, check admin role
+    if (req.nextUrl.pathname.startsWith('/admin')) {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+        
+      if (error || !profile || profile.role !== 'admin') {
+        return NextResponse.redirect(new URL('/dashboard', req.url));
+      }
+    }
+    
+    return res;
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    return res;
+  }
+}
+
+// Keep this commented out
+export const config = {
+  matcher: [],
+};
