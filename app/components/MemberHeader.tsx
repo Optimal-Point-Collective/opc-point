@@ -80,7 +80,7 @@ export default function MemberHeader() {
   }, []);
 
   return (
-    <header className="w-full flex items-center justify-between py-6 px-8 bg-opc-primary-dark" style={{ paddingTop: '60px' }}>
+    <header className="w-full flex items-center justify-between py-6 pl-16 pr-[120px] bg-opc-primary-dark" style={{ paddingTop: '60px' }}>
       {/* Search Bar */}
       <div className="relative w-full max-w-sm">
         <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none text-gray-400">

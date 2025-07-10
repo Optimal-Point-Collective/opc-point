@@ -20,16 +20,6 @@ const CloseIcon = () => (
 
 const SettingsModal = ({ isOpen, onClose, onSave, defaultRisk, setDefaultRisk }) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const [showToast, setShowToast] = useState(false);
-
-  const handleSave = () => {
-    onSave();
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-      onClose();
-    }, 2000);
-  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -75,22 +65,9 @@ const SettingsModal = ({ isOpen, onClose, onSave, defaultRisk, setDefaultRisk })
           />
         </div>
         <div className="mt-6 flex justify-start">
-          <RotatingArrowButton text="SAVE" onClick={handleSave} />
+          <RotatingArrowButton text="SAVE" onClick={onSave} />
         </div>
       </div>
-      <AnimatePresence>
-        {showToast && (
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
-                className="absolute bottom-10 bg-black text-white px-4 py-2 rounded-lg shadow-lg border border-gray-700"
-            >
-                Default risk saved successfully!
-            </motion.div>
-        )}
-    </AnimatePresence>
     </div>
   );
 };

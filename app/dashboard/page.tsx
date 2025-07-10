@@ -35,15 +35,17 @@ function MemberDashboard() {
   return (
       <div className="flex-1 flex flex-col bg-[#0c0c0c]">
       <MemberHeader />
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 pl-16 pr-[120px]">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Column 1 */}
           <div className="space-y-6 lg:col-span-1">
-            <div className="bg-opc-primary-dark p-6 rounded-lg min-h-[14rem]">
-              <h2 className="text-3xl font-bold">Welcome Back</h2>
-              <p className="text-gray-400 mt-2">12 <span className="text-sm">Days left in your OPC membership</span></p>
-              <RotatingArrowButton text="RENEW" className="mt-4" />
+            <div className="bg-opc-primary-dark rounded-lg flex flex-col aspect-[300/280]">
+              <div className="pt-6 pr-6 pb-6">
+                <h2 className="text-3xl font-bold">Welcome Back</h2>
+                <p className="text-gray-400 mt-2">12 <span className="text-sm">Days left in your OPC membership</span></p>
+                <RotatingArrowButton text="RENEW" className="mt-4" />
+              </div>
             </div>
             <div className="space-y-6">
                 <NewsCard source="CNN" title="FED KEEPS RATES STEADY" time="19m ago · Faith Hill" />
@@ -57,10 +59,12 @@ function MemberDashboard() {
 
           {/* Column 2 */}
           <div className="space-y-6 lg:col-span-1 flex flex-col">
-            <div className="bg-opc-secondary-dark p-6 rounded-lg min-h-[14rem] flex flex-col justify-between">
-              <h3 className="text-lg font-semibold">Win rate</h3>
-              <p className="text-6xl font-bold mt-2">54%</p>
-              <p className="text-sm text-gray-400 mt-2">Total Wins: <span className="text-white">15</span>, Losses: <span className="text-red-500">13</span></p>
+            <div className="bg-opc-secondary-dark p-6 rounded-lg flex flex-col aspect-[300/280]">
+              <h3 className="text-2xl font-semibold text-[#BDB7A9]">Win rate</h3>
+              <div className="flex-grow flex items-center">
+                <p className="text-[80px] font-bold">54%</p>
+              </div>
+              <p className="text-sm text-[#9C9C9C]">Total Wins: <span className="text-white">15</span>, Losses: <span className="text-red-500">13</span></p>
             </div>
             <div className="bg-opc-secondary-dark p-6 rounded-lg flex-grow flex flex-col">
               <h3 className="text-lg font-semibold">Learning Resource</h3>
@@ -81,9 +85,9 @@ function MemberDashboard() {
 
           {/* Column 3 */}
           <div className="space-y-6 lg:col-span-1 flex flex-col">
-            <div className="bg-opc-secondary-dark p-6 rounded-lg min-h-[14rem]">
-              <h3 className="text-lg font-semibold">Daily Brief</h3>
-              <ul className="text-sm text-gray-300 mt-4 space-y-3">
+            <div className="bg-opc-secondary-dark p-6 rounded-lg flex flex-col aspect-[300/280]">
+              <h3 className="text-2xl font-semibold text-[#BDB7A9]">Daily Brief</h3>
+              <ul className="text-sm text-[#9C9C9C] mt-4 space-y-3">
                 <li>BTC testing $102,000; breakout could spark momentum.</li>
                 <li>FOMC decision today—expect volatility.</li>
                 <li>US PCE inflation numbers come out Friday and could impact risk sentiment.</li>

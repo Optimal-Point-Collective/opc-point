@@ -9,11 +9,27 @@ const montserrat = Montserrat({
   variable: '--font-montserrat',
 });
 
+import { Toaster } from 'react-hot-toast';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
     <html lang="en" className={montserrat.variable}>
       <body className="font-montserrat bg-gray-900">
+        <Toaster 
+          toastOptions={{
+            style: {
+              background: '#BDB7A9',
+              color: 'black',
+            },
+            success: {
+              iconTheme: {
+                primary: 'black',
+                secondary: '#BDB7A9',
+              },
+            },
+          }}
+        />
         <NavigationWrapper>{children}</NavigationWrapper>
       </body>
     </html>

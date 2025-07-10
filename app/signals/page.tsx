@@ -8,6 +8,8 @@ import RotatingArrowButton from '../components/RotatingArrowButton';
 import Link from 'next/link';
 import SettingsModal, { SettingsIcon } from '../components/SettingsModal';
 
+import { toast } from 'react-hot-toast';
+
 interface Signal {
   id: string;
   ticker: string;
@@ -237,9 +239,10 @@ export default function SignalsPage() {
   });
 
   const handleSaveSettings = () => {
-    localStorage.setItem('defaultRisk', String(defaultRisk));
-    setIsSettingsOpen(false);
-  };
+  localStorage.setItem('defaultRisk', String(defaultRisk));
+  toast.success('Default risk saved successfully!');
+  setIsSettingsOpen(false);
+};
 
   // Fetch signals from Supabase
   useEffect(() => {

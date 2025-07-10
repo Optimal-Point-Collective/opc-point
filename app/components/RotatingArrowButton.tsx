@@ -5,9 +5,10 @@ interface RotatingArrowButtonProps {
   text: string;
   className?: string;
   href?: string;
+  onClick?: () => void;
 }
 
-const RotatingArrowButton: React.FC<RotatingArrowButtonProps> = ({ text, className, href }) => {
+const RotatingArrowButton: React.FC<RotatingArrowButtonProps> = ({ text, className, href, onClick }) => {
   const content = (
     <>
       {text}
@@ -42,9 +43,9 @@ const RotatingArrowButton: React.FC<RotatingArrowButtonProps> = ({ text, classNa
   }
 
   return (
-    <a href="#" className={buttonClassName}>
+    <button onClick={onClick} className={buttonClassName}>
       {content}
-    </a>
+    </button>
   );
 };
 

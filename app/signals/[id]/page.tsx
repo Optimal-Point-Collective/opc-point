@@ -22,6 +22,8 @@ interface Signal {
   profile?: string;
 }
 
+import Link from 'next/link';
+
 export default function PrecisionCalculatorPage() {
   const params = useParams();
   const id = params.id as string;
@@ -163,78 +165,84 @@ export default function PrecisionCalculatorPage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-[#0c0c0c] flex flex-col">
         <MemberHeader />
-        <main className="flex-1 p-8">
-          <div className="max-w-6xl mx-auto">
-            <h1 className="text-4xl font-semibold text-white mb-8">Precision 2.0</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+        <main className="flex-1 p-8 flex">
+          <div className="max-w-6xl mx-auto flex flex-col w-full">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-4xl font-semibold text-white">Precision 2.0</h1>
+              <div className="text-sm">
+                <Link href="/dashboard" className="text-[#9C9C9C] hover:text-white">Home</Link>
+                <span className="mx-4 text-[#9C9C9C]">—</span>
+                <Link href="/signals" className="text-[#9C9C9C] hover:text-white">Signals</Link>
+                <span className="mx-4 text-[#9C9C9C]">—</span>
+                <span className="text-white">{signal.ticker}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
               {/* Column 1: Trade Parameters */}
-              <div className="bg-[#121212] rounded-lg p-6 border border-gray-800 h-full">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-sm font-bold uppercase text-gray-400">TRADE PARAMETERS</h2>
-                  <div className={`w-4 h-4 rounded-full animate-pulse ${tradeDirection === 'long' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                </div>
-                <div className="space-y-4">
+              <div className="bg-[#121212] rounded-lg p-6 border border-gray-800 flex flex-col">
+                <h2 className="text-2xl font-normal text-[#FCFCFC] mb-10">TRADE PARAMETERS</h2>
+                <div className="space-y-8 text-lg flex-grow">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">TICKER</span>
-                    <span className="font-bold">{signal.ticker}</span>
+                    <span className="text-[#9C9C9C]">TICKER</span>
+                    <span className="font-bold text-white">{signal.ticker}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">STOP LOSS</span>
-                    <span className="font-bold">{signal.stop_loss}</span>
+                    <span className="text-[#9C9C9C]">STOP LOSS</span>
+                    <span className="font-bold text-white">{signal.stop_loss}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">TARGET</span>
-                    <span className="font-bold">{signal.target}</span>
+                    <span className="text-[#9C9C9C]">TARGET</span>
+                    <span className="font-bold text-white">{signal.target}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">PROFILE</span>
-                    <span className="font-bold">{signal.profile || 'SCALP'}</span>
+                    <span className="text-[#9C9C9C]">PROFILE</span>
+                    <span className="font-bold text-white">{signal.profile || 'SCALP'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">RISK (USD)</span>
+                    <span className="text-[#9C9C9C]">RISK (USD)</span>
                     <input
                       type="number"
                       value={riskAmount}
                       onChange={(e) => setRiskAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-24 px-2 py-1 bg-transparent border border-gray-700 rounded text-right focus:outline-none focus:border-gray-500"
+                      className="w-24 px-2 py-1 bg-transparent border border-gray-700 rounded text-right focus:outline-none focus:border-gray-500 text-white"
                       placeholder="Input your risk"
                     />
                   </div>
                 </div>
-                <div className="mt-6 pt-6 border-t border-gray-800">
-                  <h3 className="text-sm font-bold uppercase text-gray-400 mb-2">THESIS</h3>
-                  <p className="text-gray-300 italic">{signal.notes || 'No thesis provided.'}</p>
+                <div className="mt-10">
+                  <h3 className="text-2xl font-normal text-[#FCFCFC] mb-10">THESIS</h3>
+                  <p className="text-[#9C9C9C] italic text-lg">{signal.notes || 'No thesis provided.'}</p>
                 </div>
               </div>
 
               {/* Column 2: Order Breakdown */}
-              <div className="bg-[#121212] rounded-lg p-6 border border-gray-800 h-full">
-                <h2 className="text-sm font-bold uppercase text-gray-400 mb-6">ORDER BREAKDOWN</h2>
-                <div className="space-y-2">
+              <div className="bg-[#121212] rounded-lg p-6 border border-gray-800 flex flex-col">
+                <h2 className="text-2xl font-normal text-[#FCFCFC] mb-10">ORDER BREAKDOWN</h2>
+                <div className="space-y-8 text-lg flex-grow">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">TOTAL ORDER VALUE</span>
-                    <span className="font-bold">${totalOrderValue.toFixed(2)}</span>
+                    <span className="text-[#9C9C9C]">TOTAL ORDER VALUE</span>
+                    <span className="font-bold text-white">${totalOrderValue.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">AVERAGE ENTRY</span>
-                    <span className="font-bold">{avgEntryPrice.toFixed(4)}</span>
+                    <span className="text-[#9C9C9C]">AVERAGE ENTRY</span>
+                    <span className="font-bold text-white">{avgEntryPrice.toFixed(4)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">PROJECTED PROFIT</span>
-                    <span className="font-bold">${projectedProfit.toFixed(2)}</span>
+                    <span className="text-[#9C9C9C]">PROJECTED PROFIT</span>
+                    <span className="font-bold text-white">${projectedProfit.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">RECOMMENDED LEVERAGE</span>
-                    <span className="font-bold">{recommendedLeverage.toFixed(2)}x</span>
+                    <span className="text-[#9C9C9C]">RECOMMENDED LEVERAGE</span>
+                    <span className="font-bold text-white">{recommendedLeverage.toFixed(2)}x</span>
                   </div>
                 </div>
-                <div className="mt-6 pt-6 border-t border-gray-800">
-                  <h3 className="text-sm font-bold uppercase text-gray-400 mb-2">BID EXECUTION PLAN</h3>
-                  <div className="space-y-2">
+                <div className="mt-10">
+                  <h3 className="text-2xl font-normal text-[#FCFCFC] mb-10">BID EXECUTION PLAN</h3>
+                  <div className="space-y-8 text-lg">
                     {bids.map((bid, index) => (
                       <div key={index} className="flex justify-between items-center">
-                        <span className="text-gray-400">BID {index + 1}</span>
-                        <span className="font-bold">{bid.size.toFixed(4)} ({bid.percentage.toFixed(0)}%) @ {bid.price.toFixed(4)}</span>
+                        <span className="text-[#9C9C9C]">BID {index + 1}</span>
+                        <span className="font-bold text-white">{bid.size.toFixed(4)} ({bid.percentage.toFixed(0)}%) @ {bid.price.toFixed(4)}</span>
                       </div>
                     ))}
                   </div>
