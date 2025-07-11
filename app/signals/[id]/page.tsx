@@ -25,6 +25,13 @@ interface Signal {
   bids?: number;
 }
 
+interface BidData {
+  price: number;
+  size: number;
+  percentage: number;
+  usdValue: number;
+}
+
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 
@@ -42,7 +49,7 @@ export default function PrecisionCalculatorPage() {
     }
     return 40;
   });
-  const [bids, setBids] = useState<any[]>([]);
+  const [bids, setBids] = useState<BidData[]>([]);
   const [avgEntryPrice, setAvgEntryPrice] = useState(0);
   const [totalOrderValue, setTotalOrderValue] = useState(0);
   const [projectedProfit, setProjectedProfit] = useState(0);
@@ -50,95 +57,15 @@ export default function PrecisionCalculatorPage() {
   const [activeCopyModal, setActiveCopyModal] = useState<number | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (signal && riskAmount) {
-      calculateResults();
-    }
-  }, [signal, riskAmount]);
-
-  // Close modal when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        setActiveCopyModal(null);
-      }
-    };
-
-    if (activeCopyModal !== null) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [activeCopyModal]);
-
-  useEffect(() => {
-    if (id) {
-      const fetchSignal = async () => {
-        try {
-          setLoading(true);
-          const { data, error } = await supabase
-            .from('signals')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-          if (error) {
-            throw error;
-          }
-
-          if (data) {
-            setSignal(data);
-          } else {
-            setError('Signal not found.');
-          }
-        } catch (err: any) {
-          setError('Failed to fetch signal data.');
-          console.error('Error fetching signal:', err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchSignal();
-    }
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0c0c0c] flex items-center justify-center text-white">
-        <div>Loading Calculator...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#0c0c0c] flex items-center justify-center text-red-500">
-        <div>Error: {error}</div>
-      </div>
-    );
-  }
-
-  if (!signal) {
-    return (
-      <div className="min-h-screen bg-[#0c0c0c] flex items-center justify-center text-white">
-        <div>Signal data could not be loaded.</div>
-      </div>
-    );
-  }
-  
-  const tradeDirection = signal.stop_loss < signal.entry1 ? 'long' : 'short';
-
   const calculateResults = () => {
     const risk = Number(riskAmount);
-    const entry1 = signal.entry1;
-    const entry2 = signal.entry2;
-    const sl = signal.stop_loss;
-    const target = signal.target;
+    const entry1 = signal!.entry1;
+    const entry2 = signal!.entry2;
+    const sl = signal!.stop_loss;
+    const target = signal!.target;
     
     // Use bids from database, fallback to legacy logic if not set
-    const numBids = signal.bids || (entry2 && entry2 !== entry1 ? 4 : 1);
+    const numBids = signal!.bids || (entry2 && entry2 !== entry1 ? 4 : 1);
 
     const top = entry2 ? Math.max(entry1, entry2) : entry1;
     const bottom = entry2 ? Math.min(entry1, entry2) : entry1;
@@ -189,7 +116,7 @@ export default function PrecisionCalculatorPage() {
       const usdValue = size * price;
 
       return { price, size, percentage, usdValue };
-    }).filter((bid): bid is any => bid !== null);
+    }).filter((bid): bid is BidData => bid !== null);
 
     setBids(bidsData);
 
@@ -225,12 +152,92 @@ export default function PrecisionCalculatorPage() {
     setRecommendedLeverage(safeLeverage > 0 ? safeLeverage : 0);
   };
 
+  useEffect(() => {
+    if (signal && riskAmount) {
+      calculateResults();
+    }
+  }, [signal, riskAmount, calculateResults]);
+
+  // Close modal when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setActiveCopyModal(null);
+      }
+    };
+
+    if (activeCopyModal !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [activeCopyModal]);
+
+  useEffect(() => {
+    if (id) {
+      const fetchSignal = async () => {
+        try {
+          setLoading(true);
+          const { data, error } = await supabase
+            .from('signals')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+          if (error) {
+            throw error;
+          }
+
+          if (data) {
+            setSignal(data);
+          } else {
+            setError('Signal not found.');
+          }
+        } catch (err: unknown) {
+          setError('Failed to fetch signal data.');
+          console.error('Error fetching signal:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchSignal();
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0c0c0c] flex items-center justify-center text-white">
+        <div>Loading Calculator...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0c0c0c] flex items-center justify-center text-red-500">
+        <div>Error: {error}</div>
+      </div>
+    );
+  }
+
+  if (!signal) {
+    return (
+      <div className="min-h-screen bg-[#0c0c0c] flex items-center justify-center text-white">
+        <div>Signal data could not be loaded.</div>
+      </div>
+    );
+  }
+  
+  const tradeDirection = signal.stop_loss < signal.entry1 ? 'long' : 'short';
+
   const copyToClipboard = async (value: string, type: string) => {
     try {
       await navigator.clipboard.writeText(value);
       toast.success(`${type} copied to clipboard!`);
       setActiveCopyModal(null);
-    } catch (err) {
+    } catch {
       toast.error('Failed to copy to clipboard');
     }
   };

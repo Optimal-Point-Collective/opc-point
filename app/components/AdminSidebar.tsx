@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { supabase } from '@/utils/supabaseClient';
 
 // Icon Components
 const HomeIcon = () => <Image src="/admin-home-outline.svg" alt="Dashboard" width={20} height={20} />;

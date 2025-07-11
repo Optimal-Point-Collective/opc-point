@@ -315,11 +315,6 @@ const getStatusColor = (status: Signal['status']) => {
   }
 };
 
-// Define SupabaseResponse type globally for this file
-interface SupabaseResponse<T = unknown> {
-  data: T | null;
-  error: { message: string } | null;
-}
 
 
 
