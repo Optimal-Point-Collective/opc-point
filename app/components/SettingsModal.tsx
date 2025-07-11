@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import RotatingArrowButton from './RotatingArrowButton';
+import Image from 'next/image';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -12,10 +13,12 @@ interface SettingsModalProps {
 }
 
 const SettingsIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M19.4 15L21.54 16.54C21.84 16.78 22 17.27 22 17.69V19.5C22 19.91 21.84 20.23 21.54 20.47L19.4 22M4.6 15L2.46 16.54C2.16 16.78 2 17.27 2 17.69V19.5C2 19.91 2.16 20.23 2.46 20.47L4.6 22M19.4 9L21.54 7.46C21.84 7.22 22 6.73 22 6.31V4.5C22 4.09 21.84 3.77 21.54 3.53L19.4 2M4.6 9L2.46 7.46C2.16 7.22 2 6.73 2 6.31V4.5C2 4.09 2.16 3.77 2.46 3.53L4.6 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
+    <Image
+        src="/settings-outline.svg"
+        alt="Settings"
+        width={24}
+        height={24}
+    />
 );
 
 const CloseIcon = () => (

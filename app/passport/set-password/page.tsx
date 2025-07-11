@@ -15,7 +15,7 @@ export default function SetPasswordPage() {
 
   useEffect(() => {
     // Listen for the SIGNED_IN event
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         console.log('User has been signed in via magic link.');
         setIsAuthenticated(true);

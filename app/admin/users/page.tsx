@@ -130,10 +130,11 @@ function AllUsersPage() {
       email: user.email || '',
       dateJoined: user.created_at,
       daysLeft: user.days_left ?? 0,
-      membershipType: (user.membership_type as 'Premium' | 'Free') || 'Free',
+      membershipType: (user.membership_type as 'Premium' | 'Free' | 'Team') || 'Free',
       affiliateLink: user.affiliate_code || '',
       telegramId: user.telegram_id || '',
       status: (user.status as 'Active' | 'Pending' | 'Suspended') || 'Pending',
+      role: (user.role as 'MEMBER' | 'ADMIN') || 'MEMBER',
     });
     setIsModalOpen(true);
   };

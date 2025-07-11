@@ -14,34 +14,17 @@ export async function GET() {
     // Log debug information
     console.log('API route: Getting users with service role key');
     
-    // Fetch all user profiles
-    const { data: users, error } = await supabaseAdmin
-      .from('user_profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // 1. Fetch all user profiles from the 'profiles' table for the most up-to-date data
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select('*');
 
-    if (error) {
-      console.error('Error fetching users:', error);
-      return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
     }
 
-    // Return the original user data from user_profiles view to match the User interface
-    // in the frontend without transforming it
-    const formattedUsers = users.map(user => ({
-      id: user.id,
-      full_name: user.full_name || null,
-      email: user.email || null,
-      role: user.role || null,
-      membership_type: user.membership_type || 'Free',
-      days_left: user.days_left || 0,
-      affiliate_code: user.affiliate_code || null,
-      status: user.status || 'Active',
-      created_at: user.created_at || new Date().toISOString(),
-      updated_at: user.updated_at || null,
-      telegram_id: user.telegram_id || null
-    }));
-
-    // Fetch all auth users using the admin client
+    // 2. Fetch all authenticated users from 'auth.users'
     const { data: authUsersData, error: authUsersError } = await supabaseAdmin.auth.admin.listUsers();
 
     if (authUsersError) {
@@ -49,8 +32,32 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch authentication data' }, { status: 500 });
     }
 
-    // Return the data
-    return NextResponse.json({ users: formattedUsers, authUsers: authUsersData.users });
+    // 3. Create a map of profiles for efficient lookup
+    const profilesMap = new Map(profiles.map(p => [p.id, p]));
+
+    // 4. Merge auth users with their profiles to create a complete, hybrid user list
+    const mergedUsers = authUsersData.users.map(authUser => {
+      const profile = profilesMap.get(authUser.id);
+      return {
+        id: authUser.id,
+        full_name: profile?.full_name || null,
+        email: authUser.email || null,
+        role: profile?.role || 'MEMBER', // Default to MEMBER if no profile
+        membership_type: profile?.membership_type || 'Free',
+        days_left: profile?.days_left || 0,
+        affiliate_code: profile?.affiliate_code || null,
+        status: profile?.status || 'Pending', // Default to Pending if no profile
+        created_at: profile?.created_at || authUser.created_at,
+        updated_at: profile?.updated_at || authUser.updated_at,
+        telegram_id: profile?.telegram_id || null,
+      };
+    });
+
+    // 5. Sort the final list by creation date
+    mergedUsers.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Return the merged and sorted user data
+    return NextResponse.json({ users: mergedUsers });
 
   } catch (error: unknown) {
     console.error('An unexpected API error:', error);
@@ -72,7 +79,8 @@ export async function PUT(request: Request) {
       daysLeft, 
       affiliateLink,
       telegramId,
-      status 
+      status,
+      role 
     } = body;
     
     // Validate required fields
@@ -97,6 +105,7 @@ export async function PUT(request: Request) {
         affiliate_code: affiliateLink,
         telegram_id: telegramId,
         status: status,
+        role: role,
         updated_at: new Date().toISOString(),
         // Only update created_at if dateJoined is provided and different
         ...(dateJoined ? { created_at: new Date(dateJoined).toISOString() } : {})

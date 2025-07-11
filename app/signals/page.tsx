@@ -282,8 +282,15 @@ export default function SignalsPage() {
         },
         (payload) => {
           console.log('Signals change received:', payload);
-          // Refetch data on any change
-          fetchSignals();
+          if (payload.eventType === 'INSERT') {
+            setSignals(currentSignals => [payload.new as Signal, ...currentSignals]);
+          } else if (payload.eventType === 'UPDATE') {
+            setSignals(currentSignals => 
+              currentSignals.map(s => s.id === payload.new.id ? { ...s, ...payload.new } as Signal : s)
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setSignals(currentSignals => currentSignals.filter(s => s.id !== payload.old.id));
+          }
         }
       )
       .subscribe();

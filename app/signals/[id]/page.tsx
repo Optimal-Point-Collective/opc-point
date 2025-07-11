@@ -20,7 +20,7 @@ interface Signal {
   status: 'OPEN' | 'FILLED' | 'CLOSED' | 'CANCELLED';
   created_at: string;
   pnl_percentage?: number;
-  notes?: string;
+  thesis?: string;
   profile?: string;
   bids?: number;
 }
@@ -302,14 +302,13 @@ export default function PrecisionCalculatorPage() {
                       type="number"
                       value={riskAmount}
                       onChange={(e) => setRiskAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-24 px-2 py-1 bg-transparent border border-gray-700 rounded text-right focus:outline-none focus:border-gray-500 text-white"
-                      placeholder="Input your risk"
+                      className="w-32 px-2 py-1 bg-transparent border border-gray-700 rounded text-right focus:outline-none focus:border-gray-500 text-white"
                     />
                   </div>
                 </div>
                 <div className="mt-10">
                   <h3 className="text-2xl font-normal text-[#FCFCFC] mb-10">THESIS</h3>
-                  <p className="text-[#9C9C9C] italic text-lg">{signal.notes || 'No thesis provided.'}</p>
+                  <p className="text-[#9C9C9C] italic text-lg">{signal.thesis || 'No thesis provided.'}</p>
                 </div>
               </div>
 

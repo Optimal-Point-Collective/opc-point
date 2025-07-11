@@ -84,7 +84,7 @@ const SignalModal = ({ isOpen, onClose, signal, onSave }: SignalModalProps) => {
         entry1: signal.entry1.toString(),
         entry2: signal.entry2?.toString() || '',
         stop_loss: signal.stop_loss.toString(),
-        target: signal.target.toString(),
+        target: signal.target?.toString() || '',
         status: signal.status,
         thesis: signal.thesis || '',
         profile: signal.profile || '',
