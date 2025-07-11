@@ -16,6 +16,7 @@ export default function NavigationWrapper({ children }: NavigationWrapperProps) 
     '/passport/signup',
     '/passport/logout',
     '/passport/reset-password',
+    '/passport/set-password', // Added this line
     '/auth/callback',
   ];
   

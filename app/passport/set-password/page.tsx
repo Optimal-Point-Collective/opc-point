@@ -66,44 +66,69 @@ export default function SetPasswordPage() {
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
-        Processing authentication... Please wait.
-      </div>
-    );
-  }
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-900 text-white">
-      <form onSubmit={handleSetPassword} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-bold mb-4">Create Your Password</h1>
-        <p className="text-gray-400 mb-6">Welcome! Please set a password for your account.</p>
-        <input
-          type="password"
-          placeholder="New Password"
-          className="w-full p-2 rounded bg-gray-800 border border-gray-700"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Confirm New Password"
-          className="w-full p-2 rounded bg-gray-800 border border-gray-700"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          disabled={loading}
-        >
-          {loading ? 'Saving...' : 'Set Password and Login'}
-        </button>
-        {error && <div className="text-red-400 mt-4">{error}</div>}
-      </form>
+    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-[#0C0C0C]">
+      {!isAuthenticated ? (
+        <div className="w-full max-w-[575px] bg-[#121212] rounded-2xl shadow-[inset_0_0_0_0.5px_#7C7C7C] p-16 text-center">
+          <h1 className="text-3xl font-semibold text-white">Processing Authentication</h1>
+          <p className="mt-4 text-gray-400">Please wait while we verify your invitation...</p>
+        </div>
+      ) : (
+        <div className="w-full max-w-[575px] bg-[#121212] rounded-2xl shadow-[inset_0_0_0_0.5px_#7C7C7C] overflow-hidden flex flex-col">
+          <div className="pt-16 pb-8 flex-1 flex flex-col">
+            <div className="text-center">
+              <h1 className="text-5xl font-semibold text-white">Set Your Password</h1>
+              <p className="mt-6 text-gray-400 font-light text-xl tracking-wide">Welcome! Create a secure password to access your account.</p>
+            </div>
+            
+            <div className="w-full mt-16 flex-1 flex flex-col">
+              <form onSubmit={handleSetPassword} className="flex flex-col flex-1 px-[98.5px]">
+                <div className="mb-8">
+                  <label htmlFor="password" className="block text-base font-light text-white mb-3">
+                    New Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full h-12 box-border py-3 px-4 bg-[#0c0c0c] border-[0.5px] border-[#7C7C7C]/25 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-[#BDB7A9]"
+                    required
+                  />
+                </div>
+                
+                <div className="mb-10">
+                  <label htmlFor="confirmPassword" className="block text-base font-light text-white mb-3">
+                    Confirm Password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full h-12 box-border py-3 px-4 bg-[#0c0c0c] border-[0.5px] border-[#7C7C7C]/25 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-[#BDB7A9]"
+                    required
+                  />
+                </div>
+                
+                <div className="mb-6">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-12 box-border py-3 bg-[#BDB7A9] hover:bg-opacity-90 text-black text-base font-semibold rounded-lg transition-colors border-[0.5px] border-[#7C7C7C]/25"
+                  >
+                    {loading ? 'Saving...' : 'Set Password & Login'}
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="text-red-400 text-sm text-center mb-4">{error}</div>
+                )}
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
