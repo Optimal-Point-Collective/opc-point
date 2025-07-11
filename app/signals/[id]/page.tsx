@@ -4,7 +4,7 @@
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import MemberHeader from '@/app/components/MemberHeader';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -57,7 +57,7 @@ export default function PrecisionCalculatorPage() {
   const [activeCopyModal, setActiveCopyModal] = useState<number | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const calculateResults = () => {
+  const calculateResults = useCallback(() => {
     const risk = Number(riskAmount);
     const entry1 = signal!.entry1;
     const entry2 = signal!.entry2;
@@ -150,7 +150,7 @@ export default function PrecisionCalculatorPage() {
     // Apply a final safety factor and cap at 100x
     safeLeverage = Math.min(safeLeverage * 0.95, 100);
     setRecommendedLeverage(safeLeverage > 0 ? safeLeverage : 0);
-  };
+  }, [signal, riskAmount]);
 
   useEffect(() => {
     if (signal && riskAmount) {
