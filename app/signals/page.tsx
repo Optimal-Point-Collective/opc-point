@@ -2,7 +2,7 @@
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import MemberHeader from "../components/MemberHeader";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import RotatingArrowButton from '../components/RotatingArrowButton';
 import Link from 'next/link';
@@ -69,48 +69,48 @@ const StatusBadge = ({ status }: { status: Signal['status'] }) => {
   );
 };
 
-const SignalCard = ({ signal }: { signal: Signal }) => {
+function SignalCard({ signal }: { signal: Signal }) {
   return (
     <Link href={`/signals/${signal.id}`} className="block bg-[#121212] rounded-lg p-5 border border-gray-800 hover:border-gray-700 transition-all duration-200 hover:shadow-lg group">
-      <div className="grid grid-cols-12 gap-4 items-center">
-        {/* Position Type */}
-        <div className="col-span-1">
-          <div className={`flex items-center justify-center px-3 py-2 rounded bg-black ${
+      <div className="grid grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-center w-full">
+        {/* Direction Pill */}
+        <div className="col-span-2 flex items-center">
+          <div className={`w-[90px] flex items-center justify-center px-3 py-2 rounded bg-black ${
             signal.direction?.toUpperCase() === 'LONG' ? 'text-green-500' : 'text-red-500'
           }`}>
-            <span className="text-sm font-medium uppercase">
+            <span className="text-base font-semibold uppercase">
               {signal.direction?.toUpperCase() || 'LONG'}
             </span>
           </div>
         </div>
 
         {/* Ticker */}
-        <div className="col-span-2 px-2">
+        <div className="col-span-1 pl-1">
           <div className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">TICKER</div>
-          <div className="text-white text-2xl font-bold">
+          <div className="text-white text-xl font-bold">
             {signal.ticker}
           </div>
         </div>
 
-        {/* Entry Price */}
+        {/* Entry Price - 2 columns */}
         <div className="col-span-2 text-center">
           <div className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">ENTRY PRICE</div>
           <div className="text-white text-xl font-medium">{signal.entry1 ? signal.entry1.toFixed(2) : '-'}</div>
         </div>
 
-        {/* Target */}
+        {/* Target - 2 columns */}
         <div className="col-span-2 text-center">
           <div className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">TARGET</div>
           <div className="text-white text-xl font-medium">{signal.target ? signal.target.toFixed(2) : '-'}</div>
         </div>
 
-        {/* Stop Loss */}
+        {/* Stop Loss - 2 columns */}
         <div className="col-span-2 text-center">
           <div className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">STOP LOSS</div>
           <div className="text-white text-xl font-medium">{signal.stop_loss ? signal.stop_loss.toFixed(2) : '-'}</div>
         </div>
 
-        {/* Status */}
+        {/* Status - 2 columns */}
         <div className="col-span-2 text-center">
           <div className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">STATUS</div>
           <div className="flex justify-center">
@@ -118,7 +118,7 @@ const SignalCard = ({ signal }: { signal: Signal }) => {
           </div>
         </div>
         
-        {/* View Detail */}
+        {/* View Detail - 1 column */}
         <div className="col-span-1 flex justify-center items-center">
           <RotatingArrowButton text="" />
         </div>
@@ -139,7 +139,7 @@ const SignalCard = ({ signal }: { signal: Signal }) => {
       )}
     </Link>
   );
-};
+}
 
 const Pagination = ({ 
   currentPage, 
@@ -303,8 +303,8 @@ export default function SignalsPage() {
       <div className="min-h-screen bg-[#0c0c0c] flex flex-col">
         <MemberHeader />
         
-        <main className="flex-1 p-8">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 p-6 pl-16 pr-[120px]">
+          <div>
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-4xl font-semibold text-white">Signals</h1>
               <button onClick={() => setIsSettingsOpen(true)} className="text-gray-400 hover:text-white">

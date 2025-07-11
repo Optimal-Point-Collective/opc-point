@@ -93,9 +93,14 @@ const SettingsIcon = () => (
 );
 
 const BackToMainSiteIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M19 12H5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M12 19L5 12L12 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M1 9L9 1M9 1H1M9 1V9"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -155,10 +160,8 @@ export default function AdminSidebar() {
   const router = useRouter();
   const isDashboardActive = pathname === '/admin';
 
-  const handleBackToMainSite = async () => {
-    // For now, logout and redirect to login
-    await supabase.auth.signOut();
-    router.push('/passport/login');
+  const handleBackToMainSite = () => {
+    router.push('/dashboard');
   };
 
   return (
@@ -188,10 +191,10 @@ export default function AdminSidebar() {
           onClick={handleBackToMainSite}
           className="group flex items-center py-2 px-2 text-[#717171] hover:text-[#0c0c0c] transition-colors duration-200 w-full text-left"
         >
-          <div className="w-5 h-5 text-[#717171] group-hover:text-[#0c0c0c] transition-colors duration-200">
+          <span className="text-sm">Back to The Point</span>
+          <span className="ml-2 transform transition-transform duration-300 group-hover:rotate-90">
             <BackToMainSiteIcon />
-          </div>
-          <span className="ml-3 text-sm">Logout</span>
+          </span>
         </button>
       </div>
     </div>

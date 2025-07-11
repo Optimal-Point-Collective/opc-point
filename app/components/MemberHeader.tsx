@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/utils/supabaseClient";
 
@@ -25,8 +24,7 @@ const ChevronDownIcon = () => (
 );
 
 export default function MemberHeader() {
-  const { user, profile } = useAuth();
-  const router = useRouter();
+  const { user, profile, isAdmin } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -102,7 +100,7 @@ export default function MemberHeader() {
 
         <div 
           ref={dropdownRef}
-          className="group relative flex items-center space-x-3 cursor-pointer bg-[#121212] hover:bg-[#BDB7A9] hover:text-black p-1 pr-3 rounded-full transition-colors"
+          className="group relative flex items-center justify-between space-x-4 cursor-pointer bg-[#121212] hover:bg-[#BDB7A9] hover:text-black px-2 rounded-full transition-colors h-16 w-[203px]"
           onClick={() => setShowDropdown(!showDropdown)}
         >
           <div className="flex items-center space-x-1.5">
@@ -111,23 +109,69 @@ export default function MemberHeader() {
               {profile?.full_name || (user?.email ? getUsername(user.email) : 'Loading...')}
             </span>
           </div>
-          <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-sm font-bold text-white">
+          <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-lg font-bold text-white">
             {user?.email ? getUserInitials(user.email) : '?'}
           </div>
           
           {/* Dropdown Menu */}
           {showDropdown && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
-              <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
-                <div className="font-medium">{profile?.full_name || (user?.email ? getUsername(user.email) : 'User')}</div>
-                <div className="text-gray-500">{user?.email}</div>
+            <div className="absolute top-full right-0 mt-2 w-[280px] bg-[#1a1a1a] rounded-2xl shadow-xl border border-[#333333] py-6 z-50">
+              {/* Profile Section */}
+              <div className="px-6 pb-4 border-b border-[#333333]">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-lg font-bold text-white">
+                    {user?.email ? getUserInitials(user.email) : '?'}
+                  </div>
+                  <div>
+                    <div className="text-white font-medium text-lg">
+                      {profile?.full_name || (user?.email ? getUsername(user.email) : 'User')}
+                    </div>
+                    <div className="text-[#9C9C9C] text-sm">
+                      {user?.email}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-              >
-                Sign out
-              </button>
+              
+              {/* Menu Items */}
+              <div className="py-2">
+                {/* Admin Link - Only show for admin users */}
+                {isAdmin && (
+                  <a
+                    href="/admin"
+                    className="flex items-center space-x-3 px-6 py-3 text-white hover:bg-[#2a2a2a] transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Admin</span>
+                  </a>
+                )}
+                
+                {/* Settings Link */}
+                <button
+                  className="flex items-center space-x-3 px-6 py-3 text-white hover:bg-[#2a2a2a] transition-colors w-full text-left"
+                  onClick={() => setShowDropdown(false)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>Settings</span>
+                </button>
+                
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-3 px-6 py-3 text-white hover:bg-[#2a2a2a] transition-colors w-full text-left"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

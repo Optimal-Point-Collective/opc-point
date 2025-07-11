@@ -22,8 +22,6 @@ export default function NavigationWrapper({ children }: NavigationWrapperProps) 
   const isAdminPath = pathname?.startsWith('/admin');
   
   // Check if we're on a passport route to show the passport sidebar
-  const isPassportPath = pathname?.startsWith('/passport');
-  
   const isAuthPath = authPaths.some(path => pathname === path);
 
   // If we are on an auth path (login, signup), render nothing but the page content.

@@ -2,7 +2,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import MemberHeader from '@/app/components/MemberHeader';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -20,9 +20,11 @@ interface Signal {
   pnl_percentage?: number;
   notes?: string;
   profile?: string;
+  bids?: number;
 }
 
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 export default function PrecisionCalculatorPage() {
   const params = useParams();
@@ -43,12 +45,30 @@ export default function PrecisionCalculatorPage() {
   const [totalOrderValue, setTotalOrderValue] = useState(0);
   const [projectedProfit, setProjectedProfit] = useState(0);
   const [recommendedLeverage, setRecommendedLeverage] = useState(0);
+  const [activeCopyModal, setActiveCopyModal] = useState<number | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (signal && riskAmount) {
       calculateResults();
     }
   }, [signal, riskAmount]);
+
+  // Close modal when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setActiveCopyModal(null);
+      }
+    };
+
+    if (activeCopyModal !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [activeCopyModal]);
 
   useEffect(() => {
     if (id) {
@@ -114,16 +134,39 @@ export default function PrecisionCalculatorPage() {
     const entry2 = signal.entry2;
     const sl = signal.stop_loss;
     const target = signal.target;
-    const numBids = 4; // Assuming 4 bids for now
+    
+    // Use bids from database, fallback to legacy logic if not set
+    const numBids = signal.bids || (entry2 && entry2 !== entry1 ? 4 : 1);
 
     const top = entry2 ? Math.max(entry1, entry2) : entry1;
     const bottom = entry2 ? Math.min(entry1, entry2) : entry1;
+    
+    // Determine trade direction
+    const isLong = sl < bottom;
+    const isShort = sl > top;
+    
+    if (!isLong && !isShort) {
+      setBids([]);
+      setAvgEntryPrice(0);
+      setTotalOrderValue(0);
+      setProjectedProfit(0);
+      setRecommendedLeverage(0);
+      return;
+    }
 
     const priceStep = numBids > 1 ? (top - bottom) / (numBids - 1) : 0;
-    const bidPrices = Array.from({ length: numBids }, (_, i) => top - i * priceStep);
+    // For long positions, start from top and go down
+    // For short positions, start from bottom and go up
+    const bidPrices = isLong
+      ? Array.from({ length: numBids }, (_, i) => top - i * priceStep)
+      : Array.from({ length: numBids }, (_, i) => bottom + i * priceStep);
 
+    const FEE = 0.0004; // Combined entry and exit fee ~0.04%
     const bidsData = bidPrices.map((price, index) => {
-      const riskPerUnit = Math.abs(price - sl);
+      const riskPerUnitWithFee = Math.abs(price - sl) + (price * FEE);
+      
+      if (riskPerUnitWithFee <= 0) return null;
+      
       let allocatedRisk = 0;
       let percentage = 0;
 
@@ -140,11 +183,11 @@ export default function PrecisionCalculatorPage() {
         }
       }
       
-      const size = allocatedRisk / riskPerUnit;
+      const size = allocatedRisk / riskPerUnitWithFee;
       const usdValue = size * price;
 
       return { price, size, percentage, usdValue };
-    });
+    }).filter((bid): bid is any => bid !== null);
 
     setBids(bidsData);
 
@@ -157,16 +200,62 @@ export default function PrecisionCalculatorPage() {
     setTotalOrderValue(totalUsdValue);
     setProjectedProfit(profit);
 
-    const leverage = totalUsdValue > 0 ? totalUsdValue / (totalUsdValue - totalSize * sl) : 0;
-    setRecommendedLeverage(leverage);
+    // Safer leverage calculation to prevent premature liquidation
+    const MMR = 0.005; // Bybit's Maintenance Margin Rate (0.5%)
+    const SAFETY_BUFFER = 0.005; // 0.5% safety buffer
+
+    // Use the entry price furthest from the stop-loss for a more conservative leverage calculation.
+    const safestEntry = isLong ? top : bottom;
+
+    let safeLeverage = 0;
+    if (safestEntry > 0 && sl > 0) {
+      if (isLong) {
+        const effectiveStopLoss = sl * (1 - SAFETY_BUFFER);
+        safeLeverage = safestEntry / (safestEntry - effectiveStopLoss + (safestEntry * MMR));
+      } else { // isShort
+        const effectiveStopLoss = sl * (1 + SAFETY_BUFFER);
+        safeLeverage = safestEntry / (effectiveStopLoss - safestEntry + (safestEntry * MMR));
+      }
+    }
+
+    // Apply a final safety factor and cap at 100x
+    safeLeverage = Math.min(safeLeverage * 0.95, 100);
+    setRecommendedLeverage(safeLeverage > 0 ? safeLeverage : 0);
   };
+
+  const copyToClipboard = async (value: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${type} copied to clipboard!`);
+      setActiveCopyModal(null);
+    } catch (err) {
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
+  const ThreeDotsIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="8" cy="2" r="1" fill="currentColor"/>
+      <circle cx="8" cy="8" r="1" fill="currentColor"/>
+      <circle cx="8" cy="14" r="1" fill="currentColor"/>
+    </svg>
+  );
+
+  const CopyIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 2V14H12V4H10V2H4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6 2V4H10V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M8 6V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6 8H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-[#0c0c0c] flex flex-col">
         <MemberHeader />
-        <main className="flex-1 p-8 flex">
-          <div className="max-w-6xl mx-auto flex flex-col w-full">
+        <div className="flex-1 p-6 pl-16 pr-[120px]">
+          <div>
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-4xl font-semibold text-white">Precision 2.0</h1>
               <div className="text-sm">
@@ -177,10 +266,15 @@ export default function PrecisionCalculatorPage() {
                 <span className="text-white">{signal.ticker}</span>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Column 1: Trade Parameters */}
-              <div className="bg-[#121212] rounded-lg p-6 border border-gray-800 flex flex-col">
-                <h2 className="text-2xl font-normal text-[#FCFCFC] mb-10">TRADE PARAMETERS</h2>
+              <div className="bg-[#121212] rounded-lg p-6 border-[0.5px] border-[#7C7C7C] flex flex-col">
+                <div className="flex justify-between items-center mb-10">
+                  <h2 className="text-2xl font-normal text-[#FCFCFC]">TRADE PARAMETERS</h2>
+                  <div className={`w-4 h-4 rounded-full animate-pulse ${
+                    tradeDirection === 'long' ? 'bg-green-500' : 'bg-red-500'
+                  }`}></div>
+                </div>
                 <div className="space-y-8 text-lg flex-grow">
                   <div className="flex justify-between items-center">
                     <span className="text-[#9C9C9C]">TICKER</span>
@@ -216,7 +310,7 @@ export default function PrecisionCalculatorPage() {
               </div>
 
               {/* Column 2: Order Breakdown */}
-              <div className="bg-[#121212] rounded-lg p-6 border border-gray-800 flex flex-col">
+              <div className="bg-[#121212] rounded-lg p-6 border-[0.5px] border-[#7C7C7C] flex flex-col">
                 <h2 className="text-2xl font-normal text-[#FCFCFC] mb-10">ORDER BREAKDOWN</h2>
                 <div className="space-y-8 text-lg flex-grow">
                   <div className="flex justify-between items-center">
@@ -240,9 +334,49 @@ export default function PrecisionCalculatorPage() {
                   <h3 className="text-2xl font-normal text-[#FCFCFC] mb-10">BID EXECUTION PLAN</h3>
                   <div className="space-y-8 text-lg">
                     {bids.map((bid, index) => (
-                      <div key={index} className="flex justify-between items-center">
+                      <div key={index} className="flex justify-between items-center relative">
                         <span className="text-[#9C9C9C]">BID {index + 1}</span>
-                        <span className="font-bold text-white">{bid.size.toFixed(4)} ({bid.percentage.toFixed(0)}%) @ {bid.price.toFixed(4)}</span>
+                        <div className="flex items-center space-x-3">
+                          <span className="font-bold text-white">{bid.size.toFixed(4)} ({bid.percentage.toFixed(0)}%) @ {bid.price.toFixed(4)}</span>
+                          <div className="relative">
+                            <button
+                              onClick={() => setActiveCopyModal(activeCopyModal === index ? null : index)}
+                              className="text-[#9C9C9C] hover:text-white transition-colors p-1"
+                            >
+                              <ThreeDotsIcon />
+                            </button>
+                            
+                            {/* Copy Options Modal */}
+                            {activeCopyModal === index && (
+                              <div 
+                                ref={modalRef}
+                                className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a1a] rounded-2xl shadow-xl border border-[#333333] py-4 z-50"
+                              >
+                                <button
+                                  onClick={() => copyToClipboard(bid.usdValue.toFixed(2), 'Value')}
+                                  className="flex items-center space-x-3 px-4 py-2 text-white hover:bg-[#2a2a2a] transition-colors w-full text-left"
+                                >
+                                  <CopyIcon />
+                                  <span>Copy Value</span>
+                                </button>
+                                <button
+                                  onClick={() => copyToClipboard(bid.size.toFixed(4), 'QTY')}
+                                  className="flex items-center space-x-3 px-4 py-2 text-white hover:bg-[#2a2a2a] transition-colors w-full text-left"
+                                >
+                                  <CopyIcon />
+                                  <span>Copy QTY</span>
+                                </button>
+                                <button
+                                  onClick={() => copyToClipboard(bid.price.toFixed(4), 'Price')}
+                                  className="flex items-center space-x-3 px-4 py-2 text-white hover:bg-[#2a2a2a] transition-colors w-full text-left"
+                                >
+                                  <CopyIcon />
+                                  <span>Copy Price</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -250,7 +384,7 @@ export default function PrecisionCalculatorPage() {
               </div>
             </div>
           </div>
-        </main>
+        </div>
         <style jsx global>{`
           input[type="number"]::-webkit-outer-spin-button,
           input[type="number"]::-webkit-inner-spin-button {

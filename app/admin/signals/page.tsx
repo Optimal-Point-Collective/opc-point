@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 
 interface Signal {
-  id: number;
+  id: string | number;
   ticker: string;
   direction: 'long' | 'short';
   entry1: number;
@@ -13,6 +13,9 @@ interface Signal {
   target: number;
   status: 'open' | 'filled' | 'closed' | 'cancelled';
   created_at: string;
+  thesis?: string;
+  profile?: string;
+  bids?: number;
 }
 
 // Icons
@@ -67,8 +70,9 @@ const SignalModal = ({ isOpen, onClose, signal, onSave }: SignalModalProps) => {
     stop_loss: '',
     target: '',
     status: 'open' as 'open' | 'filled' | 'closed' | 'cancelled',
-    notes: '',
-    profile: ''
+    thesis: '',
+    profile: '',
+    bids: '1'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -82,8 +86,9 @@ const SignalModal = ({ isOpen, onClose, signal, onSave }: SignalModalProps) => {
         stop_loss: signal.stop_loss.toString(),
         target: signal.target.toString(),
         status: signal.status,
-        notes: signal.notes || '',
-        profile: signal.profile || ''
+        thesis: signal.thesis || '',
+        profile: signal.profile || '',
+        bids: signal.bids?.toString() || '1'
       });
     } else {
       setFormData({
@@ -94,8 +99,9 @@ const SignalModal = ({ isOpen, onClose, signal, onSave }: SignalModalProps) => {
         stop_loss: '',
         target: '',
         status: 'open',
-        notes: '',
-        profile: ''
+        thesis: '',
+        profile: '',
+        bids: '1'
       });
     }
     setIsSubmitting(false);
@@ -105,18 +111,56 @@ const SignalModal = ({ isOpen, onClose, signal, onSave }: SignalModalProps) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await onSave({
-        id: signal?.id,
+      // Parse numbers safely - handle empty strings
+      const entry1 = formData.entry1 ? parseFloat(formData.entry1) : NaN;
+      const entry2 = formData.entry2 && formData.entry2.trim() !== '' ? parseFloat(formData.entry2) : undefined;
+      const stop_loss = formData.stop_loss ? parseFloat(formData.stop_loss) : NaN;
+      const target = formData.target && formData.target.trim() !== '' ? parseFloat(formData.target) : undefined;
+
+      // Validate required numbers
+      if (isNaN(entry1)) {
+        alert('Entry 1 must be a valid number');
+        return;
+      }
+      if (isNaN(stop_loss)) {
+        alert('Stop Loss must be a valid number');
+        return;
+      }
+      if (entry2 !== undefined && isNaN(entry2)) {
+        alert('Entry 2 must be a valid number');
+        return;
+      }
+      if (target !== undefined && isNaN(target)) {
+        alert('Target must be a valid number');
+        return;
+      }
+
+      const signalDataToSave = {
         ticker: formData.ticker,
         direction: formData.direction,
-        entry1: parseFloat(formData.entry1),
-        entry2: formData.entry2 ? parseFloat(formData.entry2) : undefined,
-        stop_loss: parseFloat(formData.stop_loss),
-        target: parseFloat(formData.target),
+        entry1,
+        entry2,
+        stop_loss,
+        target,
         status: formData.status,
-        notes: formData.notes,
-        profile: formData.profile
-      });
+        thesis: formData.thesis,
+        profile: formData.profile,
+        bids: parseInt(formData.bids) || 1
+      };
+
+      console.log('🔍 Parsed signal data:', signalDataToSave);
+      console.log('🔍 Entry1 type:', typeof entry1, 'value:', entry1);
+      console.log('🔍 Stop_loss type:', typeof stop_loss, 'value:', stop_loss);
+      console.log('🔍 Target type:', typeof target, 'value:', target);
+      
+      // Only include id if we're editing an existing signal
+      if (signal?.id) {
+        (signalDataToSave as Partial<Signal>).id = signal.id;
+      }
+      
+      console.log('🚀 About to call onSave...');
+      await onSave(signalDataToSave);
+      console.log('✅ onSave completed!');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error occurred';
       alert(`Failed to save signal: ${message}`);
@@ -209,13 +253,12 @@ const SignalModal = ({ isOpen, onClose, signal, onSave }: SignalModalProps) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Target <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Target <span className="text-gray-400">(Optional)</span></label>
             <input
               type="number" step="any" value={formData.target}
               onChange={(e) => setFormData({ ...formData, target: e.target.value })}
               placeholder="0.00"
               className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 focus:border-transparent transition-colors"
-              required
             />
           </div>
           <div className="md:col-span-2">
@@ -228,11 +271,21 @@ const SignalModal = ({ isOpen, onClose, signal, onSave }: SignalModalProps) => {
               className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 focus:border-transparent transition-colors"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Bids <span className="text-red-500">*</span></label>
+            <input
+              type="number" min="1" max="10" value={formData.bids}
+              onChange={(e) => setFormData({ ...formData, bids: e.target.value })}
+              placeholder="1"
+              className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 focus:border-transparent transition-colors"
+              required
+            />
+          </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">Thesis (Optional)</label>
             <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              value={formData.thesis}
+              onChange={(e) => setFormData({ ...formData, thesis: e.target.value })}
               placeholder="Enter the trade thesis..."
               className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 focus:border-transparent transition-colors"
               rows={4}
@@ -262,16 +315,20 @@ const getStatusColor = (status: Signal['status']) => {
   }
 };
 
+// Define SupabaseResponse type globally for this file
+interface SupabaseResponse<T = unknown> {
+  data: T | null;
+  error: { message: string } | null;
+}
+
+
+
 function AdminSignalsPage() {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSignal, setEditingSignal] = useState<Signal | null>(null);
-
-  useEffect(() => {
-    fetchSignals();
-  }, []);
 
   const fetchSignals = async () => {
     setLoading(true);
@@ -289,34 +346,59 @@ function AdminSignalsPage() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    fetchSignals();
+  }, []);
+
   const handleSaveSignal = async (signalData: Partial<Signal>) => {
+    console.log('🔄 Starting save with data:', signalData);
+
     let response;
 
-    if (signalData.id) {
-      response = await supabase.from("signals").update({ ...signalData }).eq("id", signalData.id);
-    } else {
-      response = await supabase.from("signals").insert([{ ...signalData }]);
+    try {
+      if (signalData.id) {
+        // Update existing signal
+        console.log('📝 Updating existing signal with id:', signalData.id);
+        response = await supabase.from("signals").update({ ...signalData }).eq("id", signalData.id);
+      } else {
+        // Create new signal - remove any id field that might be undefined
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, ...newSignalData } = signalData;
+        console.log('✨ Creating new signal with data:', newSignalData);
+        console.log('🔍 About to insert into database...');
+        response = await supabase.from("signals").insert([newSignalData]);
+        console.log('🎯 Database insert completed');
+      }
+
+      console.log('📡 Supabase response:', response);
+
+      if (response?.error) {
+        throw new Error(response.error.message);
+      }
+
+      await fetchSignals();
+      setIsModalOpen(false);
+      setEditingSignal(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('🚫 Save operation failed:', message);
+      alert(`Failed to save signal: ${message}`);
     }
-
-    const { error } = response;
-
-    if (error) {
-      console.error("Error saving signal:", error);
-      throw error;
-    }
-
-    await fetchSignals();
-    setIsModalOpen(false);
-    setEditingSignal(null);
   };
 
-  const handleDeleteSignal = async (id: number) => {
+  const handleDeleteSignal = async (id: string | number) => {
     if (window.confirm("Are you sure you want to delete this signal?")) {
-      const { error } = await supabase.from("signals").delete().eq("id", id);
-      if (error) {
-        alert(`Failed to delete signal: ${error.message}`);
-      } else {
-        await fetchSignals();
+      try {
+        const { error } = await supabase.from("signals").delete().eq("id", id);
+
+        if (error) {
+          alert(`Failed to delete signal: ${error.message}`);
+        } else {
+          await fetchSignals();
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        alert(`Failed to delete signal: ${message}`);
       }
     }
   };

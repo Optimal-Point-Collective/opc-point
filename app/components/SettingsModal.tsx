@@ -1,8 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import RotatingArrowButton from './RotatingArrowButton';
-import { motion, AnimatePresence } from 'framer-motion';
+
+interface SettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  defaultRisk: number | '';
+  setDefaultRisk: (value: number | '') => void;
+}
 
 const SettingsIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -18,12 +25,12 @@ const CloseIcon = () => (
   </svg>
 );
 
-const SettingsModal = ({ isOpen, onClose, onSave, defaultRisk, setDefaultRisk }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave, defaultRisk, setDefaultRisk }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (modalRef.current && !modalRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onClose();
       }
     };
