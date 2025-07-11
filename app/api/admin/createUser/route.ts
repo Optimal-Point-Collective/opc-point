@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       // Use inviteUserByEmail - it's idempotent. It creates the user and sends an invite.
       const { data: inviteData, error: inviteError } = await adminSupabase.auth.admin.inviteUserByEmail(email, {
         data: { full_name: name },
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3005'}/auth/callback`
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3005'}/passport/set-password`
       });
 
       if (inviteError) {

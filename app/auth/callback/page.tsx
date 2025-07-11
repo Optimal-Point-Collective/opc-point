@@ -7,7 +7,7 @@ import { supabase } from '@/utils/supabaseClient';
 export default function AuthCallback() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('Processing invitation...');
+  const [message, setMessage] = useState('Processing authentication...');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,6 +27,37 @@ export default function AuthCallback() {
         const errorDescription = hashParams.get('error_description');
         
         console.log('Auth callback params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type, error, errorCode });
+        console.log('Full URL:', window.location.href);
+        console.log('Hash:', window.location.hash);
+        console.log('All hash params:', Object.fromEntries(hashParams));
+        
+        // Handle password recovery flow
+        if (type === 'recovery' && accessToken && refreshToken) {
+          console.log('Password recovery flow detected');
+          
+          // Set the session with the recovery tokens
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          
+          if (error) {
+            console.error('Error setting recovery session:', error);
+            setMessage('Error processing password reset. Redirecting to login...');
+            setTimeout(() => router.push('/passport/login?error=recovery_error'), 3000);
+            return;
+          }
+          
+          if (data.session) {
+            setMessage('Password reset verified! Please set your new password.');
+            setShowPasswordForm(true);
+            setLoading(false);
+          } else {
+            setMessage('No session created. Redirecting to login...');
+            setTimeout(() => router.push('/passport/login'), 3000);
+          }
+          return;
+        }
         
         // Handle errors first
         if (error) {
@@ -44,12 +75,16 @@ export default function AuthCallback() {
           return;
         }
         
-        if (type === 'invite' && accessToken && refreshToken) {
+        if ((type === 'invite' || type === 'bearer') && accessToken && refreshToken) {
+          console.log('Setting session with tokens...');
+          
           // Set the session with the tokens from the URL
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
+          
+          console.log('Session set result:', { data: !!data, error });
           
           if (error) {
             console.error('Error setting session:', error);
@@ -59,10 +94,13 @@ export default function AuthCallback() {
           }
           
           if (data.session) {
+            console.log('Session created successfully, showing password form');
+            // For invitation flows, always show password form
             setMessage('Invitation verified! Please set your password.');
             setShowPasswordForm(true);
             setLoading(false);
           } else {
+            console.log('No session created');
             setMessage('No session created. Redirecting to login...');
             setTimeout(() => router.push('/passport/login'), 3000);
           }
@@ -113,7 +151,10 @@ export default function AuthCallback() {
       setLoading(true);
       setMessage('Setting your password...');
       
-      const { error } = await supabase.auth.updateUser({ password });
+      const { error } = await supabase.auth.updateUser({ 
+        password,
+        data: { password_set: true }
+      });
       
       if (error) {
         console.error('Error updating password:', error);
@@ -137,7 +178,7 @@ export default function AuthCallback() {
         {loading && !showPasswordForm && (
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 mx-auto mb-6" style={{ borderColor: '#BDB7A9' }}></div>
-            <h2 className="text-2xl font-bold mb-4" style={{ color: '#BDB7A9' }}>Processing Invitation</h2>
+            <h2 className="text-2xl font-bold mb-4" style={{ color: '#BDB7A9' }}>Processing Authentication</h2>
             <p style={{ color: '#9C9C9C' }}>{message}</p>
           </div>
         )}

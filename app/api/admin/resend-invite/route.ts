@@ -29,9 +29,30 @@ export async function POST(request: Request) {
 
     console.log(`Attempting to resend invitation to: ${email}`);
 
-    // Supabase's inviteUserByEmail is idempotent. If the user is already in an invited state,
-    // it invalidates the old link and sends a new one.
-    const { error } = await adminSupabase.auth.admin.inviteUserByEmail(email);
+    // Check the current status of the user
+    const { data, error: fetchError } = await adminSupabase.auth.admin.listUsers();
+
+    if (fetchError) {
+      console.error('Error fetching users:', fetchError);
+      return NextResponse.json({ error: 'Error checking user status.' }, { status: 500 });
+    }
+
+    const user = data.users.find(u => u.email === email);
+
+    if (!user) {
+      console.error('User not found:', email);
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+    }
+
+    if (user.email_confirmed_at) {
+      console.log('User already confirmed:', email);
+      return NextResponse.json({ error: 'User has already confirmed their invitation.' }, { status: 400 });
+    }
+
+    // Resend invitation - include the redirectTo URL
+    const { error } = await adminSupabase.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3005'}/auth/callback`
+    });
 
     if (error) {
       console.error('Error resending invitation:', error);
