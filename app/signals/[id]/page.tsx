@@ -2,6 +2,8 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import MemberHeader from '@/app/components/MemberHeader';
@@ -242,12 +244,7 @@ export default function PrecisionCalculatorPage() {
   );
 
   const CopyIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4 2V14H12V4H10V2H4Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M6 2V4H10V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M8 6V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M6 8H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
+    <Image src="/copy-outline.svg" alt="copy" width={16} height={16} />
   );
 
   return (
