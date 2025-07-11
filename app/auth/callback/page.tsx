@@ -12,6 +12,7 @@ export default function AuthCallback() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -21,8 +22,27 @@ export default function AuthCallback() {
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
         const type = hashParams.get('type');
+        const error = hashParams.get('error');
+        const errorCode = hashParams.get('error_code');
+        const errorDescription = hashParams.get('error_description');
         
-        console.log('Auth callback params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+        console.log('Auth callback params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type, error, errorCode });
+        
+        // Handle errors first
+        if (error) {
+          setLoading(false);
+          setHasError(true);
+          if (errorCode === 'otp_expired') {
+            setMessage('Your invitation link has expired. Please request a new invitation.');
+          } else if (error === 'access_denied') {
+            setMessage('Access denied. Please check your invitation link or request a new one.');
+          } else {
+            setMessage(`Authentication error: ${errorDescription || error}`);
+          }
+          // Don't redirect immediately, let user see the error
+          setTimeout(() => router.push('/passport/login?error=invitation_error'), 5000);
+          return;
+        }
         
         if (type === 'invite' && accessToken && refreshToken) {
           // Set the session with the tokens from the URL
@@ -112,13 +132,13 @@ export default function AuthCallback() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-opc-primary-dark font-montserrat" style={{ fontFamily: 'var(--font-montserrat)' }}>
-      <div className="bg-opc-secondary-dark p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
+    <div className="min-h-screen flex items-center justify-center font-montserrat" style={{ backgroundColor: '#0c0c0c', fontFamily: 'var(--font-montserrat)' }}>
+      <div className="p-8 rounded-lg shadow-lg max-w-md w-full mx-4" style={{ backgroundColor: '#121212' }}>
         {loading && !showPasswordForm && (
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#BDB7A9] mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold text-[#BDB7A9] mb-4">Processing Invitation</h2>
-            <p className="text-[#9C9C9C]">{message}</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 mx-auto mb-6" style={{ borderColor: '#BDB7A9' }}></div>
+            <h2 className="text-2xl font-bold mb-4" style={{ color: '#BDB7A9' }}>Processing Invitation</h2>
+            <p style={{ color: '#9C9C9C' }}>{message}</p>
           </div>
         )}
 
@@ -137,7 +157,8 @@ export default function AuthCallback() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-opc-primary-dark border border-gray-600 rounded-lg focus:outline-none focus:border-[#BDB7A9] text-white"
+                  className="w-full px-4 py-3 border border-gray-600 rounded-lg focus:outline-none text-white"
+                  style={{ backgroundColor: '#0c0c0c', borderColor: '#4a5568' }}
                   placeholder="Enter your password"
                   required
                   disabled={loading}
@@ -153,7 +174,8 @@ export default function AuthCallback() {
                   id="confirmPassword"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-opc-primary-dark border border-gray-600 rounded-lg focus:outline-none focus:border-[#BDB7A9] text-white"
+                  className="w-full px-4 py-3 border border-gray-600 rounded-lg focus:outline-none text-white"
+                  style={{ backgroundColor: '#0c0c0c', borderColor: '#4a5568' }}
                   placeholder="Confirm your password"
                   required
                   disabled={loading}
@@ -177,13 +199,21 @@ export default function AuthCallback() {
 
         {!loading && !showPasswordForm && (
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-[#BDB7A9] mb-4">Success!</h2>
-            <p className="text-[#9C9C9C]">{message}</p>
+            {hasError ? (
+              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+            <h2 className="text-2xl font-bold mb-4" style={{ color: '#BDB7A9' }}>{hasError ? 'Error' : 'Success!'}</h2>
+            <p style={{ color: '#9C9C9C' }}>{message}</p>
           </div>
         )}
       </div>
