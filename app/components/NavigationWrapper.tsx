@@ -16,6 +16,7 @@ export default function NavigationWrapper({ children }: NavigationWrapperProps) 
     '/passport/signup',
     '/passport/logout',
     '/passport/reset-password',
+    '/auth/callback',
   ];
   
   // Don't show regular sidebar on admin paths - admin has its own sidebar
