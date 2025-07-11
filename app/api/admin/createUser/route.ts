@@ -19,148 +19,171 @@ const adminSupabase = createClient(adminSupabaseUrl, adminSupabaseKey, {
 
 export async function POST(request: Request) {
   try {
-    // Parse request body
     const body = await request.json();
-    
-    const { 
-      email = '',
-      name, 
+    const {
+      email,
+      name,
       membershipType = 'Free',
-      daysLeft = 0, 
-      affiliateLink = '', 
+      daysLeft = 0,
+      affiliateLink = '',
       telegramId = '',
-      status = 'Active',
+      status = 'Pending', // Default to Pending for invited users
       role = 'MEMBER',
-      sendActivationEmail = false // Default to not sending email
+      sendActivationEmail = true, // Default to sending activation email
     } = body;
-    
-    // Validate required fields
+
     if (!email || !name) {
       return NextResponse.json({ error: 'Email and name are required' }, { status: 400 });
     }
-    
-    // Check if user already exists by email (if email is provided)
-    if (email) {
-      // Check in auth.users instead of profiles since that's where emails are stored
-      const { data: existingUsers, error: existingUserError } = await adminSupabase.auth.admin.listUsers();
-      
-      if (existingUserError) {
-        console.error('Error checking for existing user:', existingUserError);
-        return NextResponse.json({ error: 'Failed to check for existing user' }, { status: 500 });
-      }
-      
-      // Manually filter users by email
-      const userExists = existingUsers?.users.some(user => user.email?.toLowerCase() === email.toLowerCase());
-      
-      if (userExists) {
-        return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 });
-      }
-    }
 
-    console.log('Creating user with email:', email);
+    // Check if email looks like a placeholder email
+    const isPlaceholderEmail = email.includes('@placeholder.opcpoint');
     
-    // Validate admin permissions
-    const { error: settingsError } = await adminSupabase.auth.admin.listUsers({
-      perPage: 1, 
-      page: 1
-    });
-    
-    if (settingsError) {
-      console.error('Admin permissions check failed:', settingsError);
-      return NextResponse.json({ error: `Service role key authorization failed: ${settingsError.message}` }, { status: 401 });
-    }
-    
-    console.log('Admin access validated, proceeding with user creation');
-    
-    // Create the user directly without invitation
+    if (isPlaceholderEmail) {
+      console.log(`Creating user with placeholder email: ${email} (no invitation will be sent)`);
+      
+      // For placeholder emails, create the user without sending an invitation
+      const { data: userData, error: createError } = await adminSupabase.auth.admin.createUser({
+        email,
+        user_metadata: { full_name: name },
+        email_confirm: true, // Skip email confirmation for placeholder emails
+      });
 
-    
-    // Generate a username from the name
-    const username = name.trim().toLowerCase().replace(/\s+/g, '.');
-    // Generate a random password (will be replaced by user later)
-    const tempPassword = Math.random().toString(36).slice(-10) + 
-                       Math.random().toString(36).toUpperCase().slice(-2) + 
-                       Math.floor(Math.random() * 10).toString();
-    
-    // Use provided email or generate a placeholder
-    const userEmail = email?.trim() || `${username}@placeholder.opcpoint`;
-    
-    // Create the auth user with or without sending an email
-    const { data: authUser, error: authError } = await adminSupabase.auth.admin.createUser({
-      email: userEmail,
-      password: tempPassword,
-      email_confirm: true, // Always confirm the email for admin-created accounts
-      user_metadata: {
-        name: name,
-        full_name: name
-      },
-      // Only send the email if explicitly requested
-      // If false, the user will be created but no email will be sent
-      ...(sendActivationEmail ? { } : { email_confirm_only: true })
-    });
-    
-    if (authError) {
-      console.error('Error creating user:', authError);
-      return NextResponse.json({ error: `Failed to create user: ${authError.message}` }, { status: 500 });
-    }
-    
-    if (!authUser || !authUser.user) {
-      console.error('No user data returned from create operation');
-      return NextResponse.json({ error: 'Failed to create user account' }, { status: 500 });
-    }
-    
-    const userId = authUser.user.id;
-    console.log('User created successfully with ID:', userId);
-    
-    // Wait a moment for the profile to be created by the trigger
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Update the profile with our additional data
-    console.log('Updating profile for user ID:', userId);
-    const { data: profile, error: profileError } = await adminSupabase
-      .from('profiles')
-      .update({
+      if (createError) {
+        console.error('Error creating user with placeholder email:', createError);
+        return NextResponse.json({ error: `Failed to create user: ${createError.message}` }, { status: 500 });
+      }
+
+      if (!userData || !userData.user) {
+        return NextResponse.json({ error: 'User data not returned from Supabase.' }, { status: 500 });
+      }
+
+      console.log('User created successfully with placeholder email. Auth ID:', userData.user.id);
+      
+      // Create the profile for placeholder email user
+      const profileData = {
+        id: userData.user.id,
         full_name: name,
-        role: role,
         membership_type: membershipType,
         days_left: daysLeft,
         affiliate_code: affiliateLink,
         telegram_id: telegramId,
         status: status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId)
-      .select()
-      .single();
-    
-    if (profileError) {
-      console.error('Error updating profile:', profileError);
-      // Clean up the auth user if profile update fails
-      await adminSupabase.auth.admin.deleteUser(userId);
-      return NextResponse.json({ error: `Failed to create user profile: ${profileError.message}` }, { status: 500 });
+        role: role,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: profileError } = await adminSupabase
+        .from('profiles')
+        .upsert(profileData, { onConflict: 'id' });
+
+      if (profileError) {
+        console.error('Error creating user profile:', profileError);
+        return NextResponse.json({ error: `Failed to create user profile: ${profileError.message}` }, { status: 500 });
+      }
+
+      return NextResponse.json({ message: 'User created successfully (no email sent for placeholder address)' });
     }
-    
-    const userProfile = profile;
-    console.log('Profile updated successfully');
-    
-    // Return the created user data
-    return NextResponse.json({
-      id: userId,
-      email: email || null,
-      full_name: name,
-      role: role,
-      membership_type: membershipType,
-      days_left: daysLeft,
-      affiliate_code: affiliateLink,
-      telegram_id: telegramId,
-      status: status,
-      created_at: userProfile.created_at,
-      updated_at: userProfile.updated_at
-    });
-    
+
+    // For real email addresses, decide whether to send invitation or not
+    if (sendActivationEmail) {
+      console.log(`Inviting user with email: ${email}`);
+      
+      // Use inviteUserByEmail - it's idempotent. It creates the user and sends an invite.
+      const { data: inviteData, error: inviteError } = await adminSupabase.auth.admin.inviteUserByEmail(email, {
+        data: { full_name: name },
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3005'}/auth/callback`
+      });
+
+      if (inviteError) {
+        console.error('Error inviting user:', inviteError);
+        return NextResponse.json({ error: `Failed to invite user: ${inviteError.message}` }, { status: 500 });
+      }
+
+      if (!inviteData || !inviteData.user) {
+        return NextResponse.json({ error: 'Invited user data not returned from Supabase.' }, { status: 500 });
+      }
+
+      console.log('User invited successfully. Auth ID:', inviteData.user.id);
+      
+      // Wait a moment for the trigger to create the profile
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the profile with additional details (the trigger creates a basic profile)
+      const profileData = {
+        full_name: name,
+        membership_type: membershipType,
+        days_left: daysLeft,
+        affiliate_code: affiliateLink,
+        telegram_id: telegramId,
+        status: status,
+        role: role,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: profileError } = await adminSupabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', inviteData.user.id);
+
+      if (profileError) {
+        console.error('Error updating user profile:', profileError);
+        return NextResponse.json({ error: `Failed to update user profile: ${profileError.message}` }, { status: 500 });
+      }
+
+      return NextResponse.json({ message: 'User invited successfully - activation email sent' });
+    } else {
+      // Create user without sending invitation email
+      console.log(`Creating user without invitation: ${email}`);
+      
+      const { data: userData, error: createError } = await adminSupabase.auth.admin.createUser({
+        email,
+        user_metadata: { full_name: name },
+        email_confirm: true, // Skip email confirmation when not sending invitation
+      });
+
+      if (createError) {
+        console.error('Error creating user without invitation:', createError);
+        return NextResponse.json({ error: `Failed to create user: ${createError.message}` }, { status: 500 });
+      }
+
+      if (!userData || !userData.user) {
+        return NextResponse.json({ error: 'User data not returned from Supabase.' }, { status: 500 });
+      }
+
+      console.log('User created successfully without invitation. Auth ID:', userData.user.id);
+      
+      // Wait a moment for the trigger to create the profile
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the profile with additional details (the trigger creates a basic profile)
+      const profileData = {
+        full_name: name,
+        membership_type: membershipType,
+        days_left: daysLeft,
+        affiliate_code: affiliateLink,
+        telegram_id: telegramId,
+        status: status,
+        role: role,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: profileError } = await adminSupabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', userData.user.id);
+
+      if (profileError) {
+        console.error('Error creating user profile:', profileError);
+        return NextResponse.json({ error: `Failed to create user profile: ${profileError.message}` }, { status: 500 });
+      }
+
+      return NextResponse.json({ message: 'User created successfully (no activation email sent)' });
+    }
+
   } catch (error: unknown) {
-    const message = error instanceof Error ? `Server error: ${error.message}` : 'An unknown server error occurred';
-    console.error('Error creating user:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('Server error:', error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

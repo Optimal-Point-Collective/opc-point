@@ -1,26 +1,45 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
 
 export default function SignUpPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSignUp = async (e: React.FormEvent) => {
+    const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
+
+    // First, attempt to sign up the user
+    const { error: signUpError } = await supabase.auth.signUp({ email, password });
+
+    if (signUpError) {
+      // Check if the error is because the user already exists
+      if (signUpError.message.includes('User already registered')) {
+        setError('User already exists. Sending a magic link to log in.');
+        
+        // If user exists, send them a magic link to sign in instead
+        const { error: signInError } = await supabase.auth.signInWithOtp({ email });
+        
+        if (signInError) {
+          setError(`Could not send magic link: ${signInError.message}`);
+        } else {
+          setError('A login link has been sent to your email address.');
+        }
+      } else {
+        setError(signUpError.message);
+      }
     } else {
-      router.push("/passport/login");
+      // On successful sign-up, redirect to a confirmation page or login
+      setError('Please check your email to confirm your account.');
+      // Optionally, redirect after a delay
+      // setTimeout(() => router.push('/passport/login'), 5000);
     }
+    
+    setLoading(false);
   };
 
   return (

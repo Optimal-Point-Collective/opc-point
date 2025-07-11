@@ -33,7 +33,7 @@ export default function UserModal({ isOpen, onClose, currentUser, onSave }: User
     affiliateLink: "",
     status: "Active",
     telegramId: "",
-    sendActivationEmail: false // Default to not sending emails
+    sendActivationEmail: true // Default to sending emails
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -55,7 +55,8 @@ export default function UserModal({ isOpen, onClose, currentUser, onSave }: User
         membershipType: "Free",
         affiliateLink: "",
         status: "Active",
-        telegramId: ""
+        telegramId: "",
+        sendActivationEmail: true
       });
     }
     setErrors({});
