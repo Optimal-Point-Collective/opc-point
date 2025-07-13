@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/utils/supabaseClient";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 // Search Icon
 const SearchIcon = () => (
@@ -27,18 +27,8 @@ export default function AdminHeader({
   searchPlaceholder = "Search...", 
   onSearchChange 
 }: AdminHeaderProps) {
-  const [user, setUser] = useState<{ email?: string } | null>(null);
+  const { user } = useAuth();
   const [searchValue, setSearchValue] = useState("");
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData?.user) {
-        setUser(userData.user);
-      }
-    };
-    fetchUser();
-  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

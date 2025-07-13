@@ -1,25 +1,50 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
 import LoginCard from "@/app/components/LoginCard";
 import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Clear any existing auth state on mount
+  useEffect(() => {
+    const clearAuthState = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // User is already logged in, redirect to dashboard
+        const returnUrl = searchParams.get('returnUrl');
+        router.replace(returnUrl ? decodeURIComponent(returnUrl) : '/dashboard');
+      }
+    };
+    
+    clearAuthState();
+  }, [router, searchParams]);
 
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
       if (error) throw error;
       
-      // Redirect all users to dashboard after login
-      router.push("/dashboard");
+      if (data.user) {
+        // Get the return URL from query params
+        const returnUrl = searchParams.get('returnUrl');
+        const redirectTo = returnUrl ? decodeURIComponent(returnUrl) : '/dashboard';
+        
+        console.log('Login successful, redirecting to:', redirectTo);
+        router.replace(redirectTo);
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);

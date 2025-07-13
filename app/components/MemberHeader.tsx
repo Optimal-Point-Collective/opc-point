@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from 'next/image';
-import { useAuth } from "@/components/auth/AuthProvider";
-import { supabase } from "@/utils/supabaseClient";
+import { useAuth } from "@/lib/auth-context";
 
 const SearchIcon = ({ className }: { className?: string }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -22,7 +21,7 @@ const ChevronDownIcon = () => (
 );
 
 export default function MemberHeader() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -46,16 +45,7 @@ export default function MemberHeader() {
     e.stopPropagation();
     
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        return;
-      }
-      
-      console.log('User signed out successfully');
-      
-      // Force a hard reload to clear all state
-      window.location.href = '/passport/login';
+      await signOut();
     } catch (error) {
       console.error('Error in logout process:', error);
     }

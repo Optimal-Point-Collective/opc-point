@@ -125,14 +125,6 @@ export default function DCAToolPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-black text-white p-0 font-montserrat">
-      {/* Toast container */}
-      <div>
-        {toast.custom(
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          (_t) => (
-          <div className="hidden">{/* This is just to ensure toast is initialized */}</div>
-        ))}
-      </div>
       <h1 className="text-2xl font-bold p-6">DCA Tool</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6">
         {/* Trade Parameters Section */}

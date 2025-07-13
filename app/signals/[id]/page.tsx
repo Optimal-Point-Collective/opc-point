@@ -7,7 +7,9 @@ import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import MemberHeader from '@/app/components/MemberHeader';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ProtectedPage from '@/components/auth/ProtectedPage';
+import { usePageVisibility } from '@/hooks/usePageVisibility';
+// import { useAuth } from '@/lib/auth-context';
 
 interface Signal {
   id: string;
@@ -158,6 +160,16 @@ export default function PrecisionCalculatorPage() {
     }
   }, [signal, riskAmount, calculateResults]);
 
+  // Debounce risk amount changes to prevent excessive calculations
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (typeof window !== 'undefined' && riskAmount) {
+        localStorage.setItem('defaultRisk', String(riskAmount));
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [riskAmount]);
+
   // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -255,7 +267,7 @@ export default function PrecisionCalculatorPage() {
   );
 
   return (
-    <ProtectedRoute>
+    <ProtectedPage>
       <div className="min-h-screen bg-[#0c0c0c] flex flex-col">
         <MemberHeader />
         <div className="flex-1 p-6 pl-16 pr-[120px]">
@@ -294,7 +306,7 @@ export default function PrecisionCalculatorPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[#9C9C9C]">PROFILE</span>
-                    <span className="font-bold text-white">{signal.profile || 'SCALP'}</span>
+                    <span className="font-bold text-white uppercase">{signal.profile || 'Default'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[#9C9C9C]">RISK (USD)</span>
@@ -399,7 +411,7 @@ export default function PrecisionCalculatorPage() {
           }
         `}</style>
       </div>
-    </ProtectedRoute>
+    </ProtectedPage>
   );
 }
 

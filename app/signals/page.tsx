@@ -1,13 +1,12 @@
 'use client';
 
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ProtectedPage from "@/components/auth/ProtectedPage";
 import MemberHeader from "../components/MemberHeader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import RotatingArrowButton from '../components/RotatingArrowButton';
 import Link from 'next/link';
 import SettingsModal, { SettingsIcon } from '../components/SettingsModal';
-
 import { toast } from 'react-hot-toast';
 
 interface Signal {
@@ -69,7 +68,7 @@ const StatusBadge = ({ status }: { status: Signal['status'] }) => {
   );
 };
 
-function SignalCard({ signal }: { signal: Signal }) {
+const SignalCard = memo(({ signal }: { signal: Signal }) => {
   return (
     <Link href={`/signals/${signal.id}`} className="block bg-[#121212] rounded-lg p-5 border border-gray-800 hover:border-gray-700 transition-all duration-200 hover:shadow-lg group">
       <div className="grid grid-cols-12 gap-2 sm:gap-3 md:gap-4 items-center w-full">
@@ -139,7 +138,7 @@ function SignalCard({ signal }: { signal: Signal }) {
       )}
     </Link>
   );
-}
+});
 
 const Pagination = ({ 
   currentPage, 
@@ -249,6 +248,8 @@ export default function SignalsPage() {
     const fetchSignals = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         const { data, error } = await supabase
           .from('signals')
           .select('*')
@@ -270,7 +271,7 @@ export default function SignalsPage() {
 
     fetchSignals();
 
-    // Set up real-time subscription
+    // Set up real-time subscription with error handling
     const subscription = supabase
       .channel('signals_changes')
       .on(
@@ -282,14 +283,23 @@ export default function SignalsPage() {
         },
         (payload) => {
           console.log('Signals change received:', payload);
-          if (payload.eventType === 'INSERT') {
-            setSignals(currentSignals => [payload.new as Signal, ...currentSignals]);
-          } else if (payload.eventType === 'UPDATE') {
-            setSignals(currentSignals => 
-              currentSignals.map(s => s.id === payload.new.id ? { ...s, ...payload.new } as Signal : s)
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setSignals(currentSignals => currentSignals.filter(s => s.id !== payload.old.id));
+          try {
+            if (payload.eventType === 'INSERT') {
+              setSignals(currentSignals => {
+                const newSignal = payload.new as Signal;
+                // Avoid duplicates
+                const exists = currentSignals.some(s => s.id === newSignal.id);
+                return exists ? currentSignals : [newSignal, ...currentSignals];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              setSignals(currentSignals => 
+                currentSignals.map(s => s.id === payload.new.id ? { ...s, ...payload.new } as Signal : s)
+              );
+            } else if (payload.eventType === 'DELETE') {
+              setSignals(currentSignals => currentSignals.filter(s => s.id !== payload.old.id));
+            }
+          } catch (error) {
+            console.error('Error processing real-time update:', error);
           }
         }
       )
@@ -306,7 +316,7 @@ export default function SignalsPage() {
   const currentSignals = signals.slice(startIndex, endIndex);
 
   return (
-    <ProtectedRoute>
+    <ProtectedPage>
       <div className="min-h-screen bg-[#0c0c0c] flex flex-col">
         <MemberHeader />
         
@@ -365,6 +375,6 @@ export default function SignalsPage() {
           setDefaultRisk={setDefaultRisk}
         />
       </div>
-    </ProtectedRoute>
+    </ProtectedPage>
   );
 }

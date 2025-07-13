@@ -73,10 +73,10 @@ export default function LoginCard({ onSubmit, error, loading }: LoginCardProps) 
             <div className="mb-6">
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full h-12 box-border py-3 bg-[#BDB7A9] hover:bg-opacity-90 text-black text-base font-semibold rounded-lg transition-colors border-[0.5px] border-[#7C7C7C]/25"
+                disabled={loading || !email || !password}
+                className="w-full h-12 box-border py-3 bg-[#BDB7A9] hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-black text-base font-semibold rounded-lg transition-colors border-[0.5px] border-[#7C7C7C]/25"
               >
-                Login
+                {loading ? 'Logging in...' : 'Login'}
               </button>
             </div>
 
